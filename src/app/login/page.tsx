@@ -42,11 +42,15 @@ function LoginForm() {
         <div className="relative w-full max-w-md">
             <div className="glass p-8 sm:p-10 glow-gold animate-fade-in">
                 {/* Logo */}
-                <div className="flex justify-center mb-8">
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[var(--brand-gold)] to-[var(--brand-gold-light)] flex items-center justify-center">
-                        <svg className="w-8 h-8 text-[var(--brand-navy)]" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                        </svg>
+                <div className="flex items-center justify-center gap-4 mb-8 text-center">
+                    <img
+                        src="/logo.png"
+                        alt="Right Time"
+                        className="h-16 w-auto invert brightness-200"
+                    />
+                    <div className="text-left">
+                        <h2 className="text-2xl font-bold text-white leading-none">Right Time</h2>
+                        <h3 className="text-lg font-semibold text-[var(--brand-gold)] leading-none mt-1">Battery Club</h3>
                     </div>
                 </div>
 

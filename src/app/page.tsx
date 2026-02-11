@@ -105,7 +105,7 @@ export default function Home() {
         {/* Footer */}
         <footer className="border-t border-white/5 py-8">
           <div className="max-w-5xl mx-auto px-4 text-center text-sm text-[var(--brand-slate)]">
-            © {new Date().getFullYear()} Right Time Battery Clock. All rights reserved.
+            © {new Date().getFullYear()} Right Time Inc. All rights reserved.
           </div>
         </footer>
       </main>

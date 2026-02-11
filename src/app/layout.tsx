@@ -8,7 +8,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Right Time Battery Clock — Warranty Tracker',
+  title: 'Right Time — Battery Club',
   description:
     'Secure digital receipt vault and warranty tracker for watch battery services. Upload your receipt, track your warranty.',
 };
