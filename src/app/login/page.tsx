@@ -6,6 +6,8 @@ import { createClient } from '@/lib/supabase/client';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 
+import { getURL } from '@/lib/utils';
+
 function LoginForm() {
     const [email, setEmail] = useState('');
     const [loading, setLoading] = useState(false);
@@ -24,7 +26,7 @@ function LoginForm() {
             const { error: authError } = await supabase.auth.signInWithOtp({
                 email,
                 options: {
-                    emailRedirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirect)}`,
+                    emailRedirectTo: `${getURL()}auth/callback?redirect=${encodeURIComponent(redirect)}`,
                 },
             });
 
