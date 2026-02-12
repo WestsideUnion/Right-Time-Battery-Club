@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, Suspense } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import Button from '@/components/ui/Button';
@@ -177,7 +178,19 @@ export default function LoginPage() {
             <div className="absolute bottom-1/4 right-1/3 w-72 h-72 bg-[var(--brand-blue)]/10 rounded-full blur-3xl" />
 
             <Suspense fallback={<div className="text-white">Loading...</div>}>
-                <LoginForm />
+                <div className="flex flex-col items-center gap-8">
+                    <LoginForm />
+
+                    <footer className="text-center text-xs text-[var(--brand-slate)] space-x-4 opacity-50 hover:opacity-100 transition-opacity">
+                        <Link href="/privacy" className="hover:text-[var(--brand-gold)] transition-colors">
+                            Privacy Policy
+                        </Link>
+                        <span>•</span>
+                        <Link href="/terms" className="hover:text-[var(--brand-gold)] transition-colors">
+                            Terms of Service
+                        </Link>
+                    </footer>
+                </div>
             </Suspense>
         </div>
     );
