@@ -60,6 +60,19 @@ export async function GET(request: NextRequest) {
                 }
             }
 
+            // Check if user is an admin to potentially override redirect
+            const { data: membershipData } = await supabase
+                .from('shop_members')
+                .select('role')
+                .eq('user_id', user.id)
+                .maybeSingle();
+
+            const membership = membershipData as { role: string } | null;
+
+            if (membership?.role === 'admin' && redirect === '/dashboard') {
+                redirect = '/admin';
+            }
+
             return NextResponse.redirect(`${origin}${redirect}`);
         }
     }

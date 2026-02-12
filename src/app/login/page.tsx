@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import Button from '@/components/ui/Button';
 
@@ -11,7 +11,33 @@ import { getURL } from '@/lib/utils';
 function LoginForm() {
     const [error, setError] = useState('');
     const searchParams = useSearchParams();
+    const router = useRouter();
     const redirect = searchParams.get('redirect') || '/dashboard';
+
+    useEffect(() => {
+        const checkSession = async () => {
+            const supabase = createClient();
+            const { data: { session } } = await supabase.auth.getSession();
+
+            if (session?.user) {
+                // If already logged in, check role
+                const { data: membershipData } = await supabase
+                    .from('shop_members')
+                    .select('role')
+                    .eq('user_id', session.user.id)
+                    .maybeSingle();
+
+                const membership = membershipData as { role: string } | null;
+
+                if (membership?.role === 'admin') {
+                    router.push('/admin');
+                } else {
+                    router.push('/dashboard');
+                }
+            }
+        };
+        checkSession();
+    }, [router]);
 
     const handleGoogleLogin = async () => {
         try {
