@@ -13,7 +13,7 @@
 
 export interface ParsedItem {
     watchModel: string;
-    brandCode: string;
+    batteryModelNo: string;
 }
 
 export interface ParsedReceipt {
@@ -68,20 +68,22 @@ function extractItems(text: string): ParsedItem[] {
     for (let i = 0; i < lines.length; i++) {
         const match = lines[i].match(BATTERY_CHANGE_REGEX);
         if (match) {
-            const watchModel = match[1].trim();
+            // Based on user feedback: "Battery change <Battery Model>"
+            // The line indicates the battery model number (e.g. 371, 2016)
+            const batteryModelNo = match[1].trim();
 
-            // The next non-empty line is the brand code
-            let brandCode = '';
+            // The next non-empty line is the Watch Model / Brand (e.g. Bulova Precision)
+            let watchModel = '';
             for (let j = i + 1; j < lines.length; j++) {
                 if (lines[j].length > 0) {
                     // Stop if the next non-empty line is another "Battery change"
                     if (BATTERY_CHANGE_REGEX.test(lines[j])) break;
-                    brandCode = lines[j];
+                    watchModel = lines[j];
                     break;
                 }
             }
 
-            items.push({ watchModel, brandCode });
+            items.push({ watchModel, batteryModelNo });
         }
     }
 

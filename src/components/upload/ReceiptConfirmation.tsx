@@ -87,7 +87,7 @@ export default function ReceiptConfirmation({
                         </div>
                         <div className="grid sm:grid-cols-3 gap-3">
                             <Input
-                                label="Watch Model"
+                                label="Watch Brand (Watch model optional)"
                                 value={item.watchModel}
                                 onChange={(e) => updateItem(i, 'watchModel', e.target.value)}
                                 placeholder="e.g. Seiko SNK809"

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { parseReceipt } from '@/lib/receipt-parser';
+
 import ImageDropzone from '@/components/upload/ImageDropzone';
 import ReceiptConfirmation, { ConfirmItem } from '@/components/upload/ReceiptConfirmation';
 import Button from '@/components/ui/Button';
@@ -133,10 +133,12 @@ export default function UploadPage() {
                 setError(`AI Error: ${message}. Falling back to manual input...`);
                 // Wait a moment so they can read the error before switching steps
                 await new Promise(resolve => setTimeout(resolve, 3000));
-            }
 
-            // Move to text input step (fallback or for manual OCR input)
-            setStep('text');
+                // Fallback to manual entry (Confirm step with empty items)
+                setServiceDate(new Date().toISOString().slice(0, 10));
+                setItems([{ watchModel: '', batteryModelNo: '', price: '' }]);
+                setStep('confirm');
+            }
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : 'Upload failed');
         } finally {
@@ -144,20 +146,7 @@ export default function UploadPage() {
         }
     };
 
-    const handleParse = () => {
-        const result = parseReceipt(rawText);
-        setServiceDate(
-            result.serviceDate
-                ? new Date(result.serviceDate).toISOString().slice(0, 16)
-                : new Date().toISOString().slice(0, 16)
-        );
-        setItems(
-            result.items.length > 0
-                ? result.items.map((i) => ({ watchModel: i.watchModel, batteryModelNo: i.brandCode, price: '' }))
-                : [{ watchModel: '', batteryModelNo: '', price: '' }]
-        );
-        setStep('confirm');
-    };
+
 
     const handleConfirm = async (confirmedItems: ConfirmItem[], confirmedDate: string) => {
         setLoading(true);
@@ -218,8 +207,8 @@ export default function UploadPage() {
         <div className="max-w-2xl mx-auto px-4 py-8 animate-fade-in">
             {/* Progress Steps */}
             <div className="flex items-center justify-center gap-2 mb-8">
-                {['Upload', 'Extract', 'Confirm', 'Done'].map((label, i) => {
-                    const stepOrder = ['upload', 'text', 'confirm', 'done'];
+                {['Upload', 'Confirm', 'Done'].map((label, i) => {
+                    const stepOrder = ['upload', 'confirm', 'done'];
                     const currentIndex = stepOrder.indexOf(step);
                     const isComplete = i < currentIndex;
                     const isCurrent = i === currentIndex;
@@ -239,7 +228,7 @@ export default function UploadPage() {
                             <span className={`text-xs hidden sm:block ${isCurrent ? 'text-white' : 'text-[var(--brand-slate)]'}`}>
                                 {label}
                             </span>
-                            {i < 3 && <div className={`w-8 h-px ${isComplete ? 'bg-[var(--brand-gold)]' : 'bg-white/10'}`} />}
+                            {i < 2 && <div className={`w-8 h-px ${isComplete ? 'bg-[var(--brand-gold)]' : 'bg-white/10'}`} />}
                         </div>
                     );
                 })}
@@ -264,29 +253,7 @@ export default function UploadPage() {
                 </Card>
             )}
 
-            {/* Step 2: Text Input (manual OCR) */}
-            {step === 'text' && (
-                <Card>
-                    <h2 className="text-xl font-semibold text-white mb-2">Enter Receipt Text</h2>
-                    <p className="text-sm text-[var(--brand-slate)] mb-6">
-                        Paste or type the receipt content below. Our parser will extract battery change items automatically.
-                    </p>
-                    <textarea
-                        value={rawText}
-                        onChange={(e) => setRawText(e.target.value)}
-                        className="w-full h-48 px-4 py-3 bg-[var(--brand-surface)] border border-white/10 rounded-xl text-white placeholder:text-[var(--brand-slate)]/50 focus:outline-none focus:ring-2 focus:ring-[var(--brand-gold)]/50 font-mono text-sm resize-none"
-                        placeholder={`Example:\n12/01/2025 14:30\nBattery change Seiko SNK809\nSEI\nBattery change Citizen Eco-Drive\nCIT`}
-                    />
-                    <div className="flex gap-3 mt-6">
-                        <Button variant="secondary" onClick={() => { setRawText(''); handleParse(); }} className="flex-1">
-                            Skip — Enter Manually
-                        </Button>
-                        <Button onClick={handleParse} disabled={!rawText.trim()} className="flex-1">
-                            Parse Receipt
-                        </Button>
-                    </div>
-                </Card>
-            )}
+
 
             {/* Step 3: Confirm */}
             {step === 'confirm' && (
