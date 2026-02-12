@@ -3,14 +3,20 @@ import { createClient } from '@/lib/supabase/server';
 import { getWarrantyStatus } from '@/lib/warranty';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
+import SearchInput from './SearchInput'; // Import the new component
 import type { ReceiptWithItems, ReceiptItem } from '@/types/database';
 
 interface ReceiptWithCustomer extends ReceiptWithItems {
     customers: { email: string; display_name: string | null } | null;
 }
 
-export default async function AdminPage() {
+export default async function AdminPage({
+    searchParams,
+}: {
+    searchParams: { q?: string };
+}) {
     const supabase = await createClient();
+    const query = searchParams?.q || '';
 
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -34,32 +40,53 @@ export default async function AdminPage() {
         .select('*', { count: 'exact', head: true })
         .eq('shop_id', shopId);
 
-    // Recent receipts
-    const { data } = await supabase
+    // Recent receipts with Search
+    let receiptQuery = supabase
         .from('receipts')
         .select('*, receipt_items(*), customers(email, display_name)')
         .eq('shop_id', shopId)
-        .order('created_at', { ascending: false })
-        .limit(20);
+        .order('created_at', { ascending: false });
 
-    const receipts = (data || []) as unknown as ReceiptWithCustomer[];
+    // Note: Supabase JS library doesn't support complex cross-table OR filters easily in one go for "ilike" on joined tables without custom RPCs or multiple queries.
+    // For this MVP, we will fetch the latest 100 records and filter in-memory if a query exists, OR we can try a more specific filter if needed.
+    // However, given the requirement "Admin can search by data or user name", and the typical size, fetching more and filtering is a safer start than writing raw SQL RPCs right away.
+    // Let's bump the limit to 100.
+    receiptQuery = receiptQuery.limit(100);
+
+    const { data } = await receiptQuery;
+
+    let receipts = (data || []) as unknown as ReceiptWithCustomer[];
+
+    if (query) {
+        const lowerQuery = query.toLowerCase();
+        receipts = receipts.filter((r) => {
+            const customerEmail = r.customers?.email?.toLowerCase() || '';
+            const customerName = r.customers?.display_name?.toLowerCase() || '';
+            const watchModels = r.receipt_items.map((i) => i.watch_model.toLowerCase()).join(' ');
+
+            return customerEmail.includes(lowerQuery) || customerName.includes(lowerQuery) || watchModels.includes(lowerQuery);
+        });
+    }
 
     return (
         <div className="animate-fade-in">
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                 <div>
                     <h1 className="text-2xl font-bold text-white">Admin Dashboard</h1>
                     <p className="text-sm text-[var(--brand-slate)] mt-1">Manage receipts and customers</p>
                 </div>
-                <a
-                    href="/api/admin/export-csv"
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-[var(--brand-surface-light)] text-white border border-white/10 rounded-xl text-sm font-medium hover:border-white/20 transition-all"
-                >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                    </svg>
-                    Export CSV
-                </a>
+                <div className="flex items-center gap-3">
+                    <SearchInput />
+                    <a
+                        href="/api/admin/export-csv"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-[var(--brand-surface-light)] text-white border border-white/10 rounded-xl text-sm font-medium hover:border-white/20 transition-all whitespace-nowrap"
+                    >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                        </svg>
+                        Export CSV
+                    </a>
+                </div>
             </div>
 
             {/* Stats */}
@@ -88,7 +115,9 @@ export default async function AdminPage() {
 
             {/* Receipts Table */}
             <Card>
-                <h2 className="text-lg font-semibold text-white mb-4">Recent Receipts</h2>
+                <h2 className="text-lg font-semibold text-white mb-4">
+                    {query ? `Search Results for "${query}"` : 'Recent Receipts'}
+                </h2>
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
@@ -102,44 +131,52 @@ export default async function AdminPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {receipts.map((receipt) => {
-                                const warrantyStatus = receipt.service_date ? getWarrantyStatus(receipt.service_date) : 'expired' as const;
-                                const customer = receipt.customers;
-                                const items = receipt.receipt_items || [];
+                            {receipts.length > 0 ? (
+                                receipts.map((receipt) => {
+                                    const warrantyStatus = receipt.service_date ? getWarrantyStatus(receipt.service_date) : 'expired' as const;
+                                    const customer = receipt.customers;
+                                    const items = receipt.receipt_items || [];
 
-                                return (
-                                    <tr key={receipt.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
-                                        <td className="py-3 px-4">
-                                            <p className="text-white">{customer?.display_name || customer?.email || '—'}</p>
-                                            {customer?.display_name && (
-                                                <p className="text-xs text-[var(--brand-slate)]">{customer.email}</p>
-                                            )}
-                                        </td>
-                                        <td className="py-3 px-4 text-[var(--brand-slate)]">
-                                            {items.map((i: ReceiptItem) => i.watch_model).join(', ') || '—'}
-                                        </td>
-                                        <td className="py-3 px-4 text-[var(--brand-slate)]">
-                                            {receipt.service_date
-                                                ? new Date(receipt.service_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                                                : '—'}
-                                        </td>
-                                        <td className="py-3 px-4">
-                                            <span className="text-xs capitalize text-[var(--brand-slate)]">{receipt.status}</span>
-                                        </td>
-                                        <td className="py-3 px-4">
-                                            <Badge status={warrantyStatus} />
-                                        </td>
-                                        <td className="py-3 px-4">
-                                            <Link
-                                                href={`/admin/receipts/${receipt.id}`}
-                                                className="text-[var(--brand-gold)] hover:underline text-xs"
-                                            >
-                                                View
-                                            </Link>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
+                                    return (
+                                        <tr key={receipt.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                                            <td className="py-3 px-4">
+                                                <p className="text-white">{customer?.display_name || customer?.email || '—'}</p>
+                                                {customer?.display_name && (
+                                                    <p className="text-xs text-[var(--brand-slate)]">{customer.email}</p>
+                                                )}
+                                            </td>
+                                            <td className="py-3 px-4 text-[var(--brand-slate)]">
+                                                {items.map((i: ReceiptItem) => i.watch_model).join(', ') || '—'}
+                                            </td>
+                                            <td className="py-3 px-4 text-[var(--brand-slate)]">
+                                                {receipt.service_date
+                                                    ? new Date(receipt.service_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                                                    : '—'}
+                                            </td>
+                                            <td className="py-3 px-4">
+                                                <span className="text-xs capitalize text-[var(--brand-slate)]">{receipt.status}</span>
+                                            </td>
+                                            <td className="py-3 px-4">
+                                                <Badge status={warrantyStatus} />
+                                            </td>
+                                            <td className="py-3 px-4">
+                                                <Link
+                                                    href={`/admin/receipts/${receipt.id}`}
+                                                    className="text-[var(--brand-gold)] hover:underline text-xs whitespace-nowrap"
+                                                >
+                                                    View / Edit
+                                                </Link>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
+                            ) : (
+                                <tr>
+                                    <td colSpan={6} className="py-8 text-center text-[var(--brand-slate)]">
+                                        No receipts found.
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>

@@ -8,6 +8,7 @@ import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import { deleteReceipt } from '@/app/admin/actions'; // Server action
 import type { Receipt, ReceiptItem } from '@/types/database';
 
 interface ReceiptData extends Receipt {
@@ -21,9 +22,11 @@ export default function AdminReceiptDetailPage() {
 
     const [receipt, setReceipt] = useState<ReceiptData | null>(null);
     const [items, setItems] = useState<ReceiptItem[]>([]);
+    const [serviceDate, setServiceDate] = useState('');
     const [imageUrl, setImageUrl] = useState<string | null>(null);
     const [editing, setEditing] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [deleting, setDeleting] = useState(false);
 
     useEffect(() => {
         loadReceipt();
@@ -41,6 +44,7 @@ export default function AdminReceiptDetailPage() {
         if (receiptData) {
             setReceipt(receiptData);
             setItems(receiptData.receipt_items || []);
+            setServiceDate(receiptData.service_date ? new Date(receiptData.service_date).toISOString().slice(0, 10) : '');
 
             if (receiptData.image_path) {
                 const { data: urlData } = await supabase.storage
@@ -60,6 +64,19 @@ export default function AdminReceiptDetailPage() {
     const handleSave = async () => {
         setSaving(true);
         try {
+            // Update Service Date
+            const updates = {
+                service_date: serviceDate ? new Date(serviceDate).toISOString() : null
+            };
+
+            const { error: receiptError } = await (supabase
+                .from('receipts') as any)
+                .update(updates)
+                .eq('id', id);
+
+            if (receiptError) throw receiptError;
+
+            // Update Items
             for (const item of items) {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 await (supabase.from('receipt_items') as any)
@@ -76,6 +93,18 @@ export default function AdminReceiptDetailPage() {
             console.error('Failed to save:', err);
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!confirm('Are you sure you want to delete this receipt? This cannot be undone.')) return;
+        setDeleting(true);
+        try {
+            await deleteReceipt(id);
+        } catch (err) {
+            console.error('Delete failed:', err);
+            alert('Failed to delete receipt.');
+            setDeleting(false);
         }
     };
 
@@ -108,11 +137,29 @@ export default function AdminReceiptDetailPage() {
                     <h1 className="text-2xl font-bold text-white mb-1">Receipt Detail</h1>
                     <p className="text-sm text-[var(--brand-slate)]">ID: {receipt.id.slice(0, 8)}…</p>
                 </div>
-                <Badge status={status} />
+                <div className="flex items-center gap-3">
+                    <Badge status={status} />
+                    <Button variant="danger" size="sm" onClick={handleDelete} loading={deleting}>
+                        Delete
+                    </Button>
+                </div>
             </div>
 
-            {/* Warranty */}
-            {receipt.service_date && (
+            {/* Editing Service Date */}
+            {editing && (
+                <Card className="mb-6 border border-[var(--brand-gold)]/30">
+                    <h3 className="text-sm font-semibold text-[var(--brand-gold)] mb-3">Editing Receipt Details</h3>
+                    <Input
+                        label="Service Date"
+                        type="date"
+                        value={serviceDate}
+                        onChange={(e) => setServiceDate(e.target.value)}
+                    />
+                </Card>
+            )}
+
+            {/* Warranty Info (Read Only) */}
+            {!editing && receipt.service_date && (
                 <Card glow className="mb-6">
                     <div className="grid sm:grid-cols-3 gap-6 text-center">
                         <div>
@@ -149,7 +196,7 @@ export default function AdminReceiptDetailPage() {
                             Cancel
                         </Button>
                         <Button size="sm" onClick={handleSave} loading={saving}>
-                            Save
+                            Save Changes
                         </Button>
                     </div>
                 )}

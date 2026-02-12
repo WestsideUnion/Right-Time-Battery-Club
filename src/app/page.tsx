@@ -105,6 +105,17 @@ export default function Home() {
         {/* Footer */}
         <footer className="border-t border-white/5 py-8">
           <div className="max-w-5xl mx-auto px-4 text-center text-sm text-[var(--brand-slate)] space-y-4">
+            <p className="mb-2">
+              Developed and maintained by{' '}
+              <a
+                href="https://github.com/nfscars001"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[var(--brand-gold)] hover:underline"
+              >
+                Jacky Ho
+              </a>
+            </p>
             <p>© {new Date().getFullYear()} Right Time Inc. All rights reserved.</p>
             <div className="flex justify-center gap-6 opacity-60 hover:opacity-100 transition-opacity">
               <Link href="/privacy" className="hover:text-[var(--brand-gold)] transition-colors">
