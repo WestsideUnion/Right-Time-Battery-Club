@@ -126,9 +126,13 @@ export default function UploadPage() {
                     setStep('confirm');
                     return; // Skip the text step
                 }
-            } catch (aiErr) {
+            } catch (aiErr: unknown) {
                 console.error('AI Extraction Error:', aiErr);
-                // Fallback to manual text step if AI fails
+                // SHOW THE ERROR to the user so we know what's wrong
+                const message = aiErr instanceof Error ? aiErr.message : 'Unknown error';
+                setError(`AI Error: ${message}. Falling back to manual input...`);
+                // Wait a moment so they can read the error before switching steps
+                await new Promise(resolve => setTimeout(resolve, 3000));
             }
 
             // Move to text input step (fallback or for manual OCR input)

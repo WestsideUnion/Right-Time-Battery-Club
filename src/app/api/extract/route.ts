@@ -77,7 +77,13 @@ export async function POST(request: NextRequest) {
         const jsonMatch = responseText.match(/\{[\s\S]*\}/);
         const jsonStr = jsonMatch ? jsonMatch[0] : responseText;
 
-        const extracted = JSON.parse(jsonStr);
+        let extracted;
+        try {
+            extracted = JSON.parse(jsonStr);
+        } catch (jsonErr) {
+            console.error('JSON Parse Error. Raw text:', responseText);
+            return NextResponse.json({ error: 'Failed to parse AI response' }, { status: 500 });
+        }
 
         // Final safety check/transformation
         if (extracted.items && Array.isArray(extracted.items)) {
@@ -91,6 +97,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(extracted);
     } catch (error) {
         console.error('Extraction error:', error);
-        return NextResponse.json({ error: 'Failed to extract data' }, { status: 500 });
+        const errMsg = error instanceof Error ? error.message : 'Unknown server error';
+        return NextResponse.json({ error: errMsg }, { status: 500 });
     }
 }
