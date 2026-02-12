@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
             // Ensure a customer record exists for this user
             const { data: existingCustomer } = await supabase
                 .from('customers')
-                .select('id')
+                .select('id, display_name')
                 .eq('auth_user_id', user.id)
                 .maybeSingle();
 
@@ -42,6 +42,21 @@ export async function GET(request: NextRequest) {
                         display_name: displayName,
                         shop_id: (shop as any).id,
                     });
+                }
+            } else {
+                // Check if we should update the name (e.g. if it's missing)
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const customer = existingCustomer as any;
+                if (!customer.display_name) {
+                    const metadata = user.user_metadata || {};
+                    const displayName = metadata.full_name || metadata.name || metadata.u_name || '';
+
+                    if (displayName) {
+                        await (supabase
+                            .from('customers') as any)
+                            .update({ display_name: displayName })
+                            .eq('id', customer.id);
+                    }
                 }
             }
 
