@@ -6,7 +6,7 @@ import Button from '@/components/ui/Button';
 
 export interface ConfirmItem {
     watchModel: string;
-    brandCode: string;
+    batteryModelNo: string;
     price: string;
 }
 
@@ -31,7 +31,7 @@ export default function ReceiptConfirmation({
     };
 
     const addItem = () => {
-        setItems((prev) => [...prev, { watchModel: '', brandCode: '', price: '' }]);
+        setItems((prev) => [...prev, { watchModel: '', batteryModelNo: '', price: '' }]);
     };
 
     const removeItem = (index: number) => {
@@ -50,7 +50,7 @@ export default function ReceiptConfirmation({
 
             <Input
                 label="Service Date"
-                type="datetime-local"
+                type="date"
                 value={serviceDate}
                 onChange={(e) => setServiceDate(e.target.value)}
             />
@@ -93,10 +93,10 @@ export default function ReceiptConfirmation({
                                 placeholder="e.g. Seiko SNK809"
                             />
                             <Input
-                                label="Brand Code"
-                                value={item.brandCode}
-                                onChange={(e) => updateItem(i, 'brandCode', e.target.value)}
-                                placeholder="e.g. SEI"
+                                label="Battery Model No"
+                                value={item.batteryModelNo}
+                                onChange={(e) => updateItem(i, 'batteryModelNo', e.target.value)}
+                                placeholder="e.g. SR920SW"
                             />
                             <Input
                                 label="Price"

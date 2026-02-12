@@ -94,7 +94,38 @@ export default function UploadPage() {
             if (uploadError) throw uploadError;
             setImagePath(path);
 
-            // Move to text input step (for manual OCR input)
+            // 3. Automatic AI Extraction
+            try {
+                const response = await fetch('/api/extract', {
+                    method: 'POST',
+                    body: JSON.stringify({ imagePath: path }),
+                });
+
+                if (!response.ok) throw new Error('AI extraction failed');
+
+                const result = await response.json();
+
+                if (result.items && result.items.length > 0) {
+                    // Convert DD/MM/YYYY to YYYY-MM-DD for the HTML date input
+                    let formattedDate = '';
+                    if (result.serviceDate && result.serviceDate.includes('/')) {
+                        const [d, m, y] = result.serviceDate.split('/');
+                        formattedDate = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+                    } else {
+                        formattedDate = new Date().toISOString().split('T')[0];
+                    }
+
+                    setServiceDate(formattedDate);
+                    setItems(result.items);
+                    setStep('confirm');
+                    return; // Skip the text step
+                }
+            } catch (aiErr) {
+                console.error('AI Extraction Error:', aiErr);
+                // Fallback to manual text step if AI fails
+            }
+
+            // Move to text input step (fallback or for manual OCR input)
             setStep('text');
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : 'Upload failed');
@@ -112,8 +143,8 @@ export default function UploadPage() {
         );
         setItems(
             result.items.length > 0
-                ? result.items.map((i) => ({ watchModel: i.watchModel, brandCode: i.brandCode, price: '' }))
-                : [{ watchModel: '', brandCode: '', price: '' }]
+                ? result.items.map((i) => ({ watchModel: i.watchModel, batteryModelNo: i.brandCode, price: '' }))
+                : [{ watchModel: '', batteryModelNo: '', price: '' }]
         );
         setStep('confirm');
     };
@@ -156,7 +187,7 @@ export default function UploadPage() {
                 receipt_id: receipt!.id,
                 shop_id: customer.shop_id,
                 watch_model: item.watchModel,
-                brand_code: item.brandCode || null,
+                brand_code: item.batteryModelNo || null,
                 price: item.price ? parseFloat(item.price) : null,
                 confirmed: true,
             }));
