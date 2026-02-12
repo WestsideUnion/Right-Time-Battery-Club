@@ -116,7 +116,13 @@ export default function UploadPage() {
                     }
 
                     setServiceDate(formattedDate);
-                    setItems(result.items);
+                    // Sanitize items to ensure they match ConfirmItem interface
+                    const sanitizedItems = result.items.map((item: any) => ({
+                        watchModel: item.watchModel || '',
+                        batteryModelNo: item.batteryModelNo || '',
+                        price: item.price || '',
+                    }));
+                    setItems(sanitizedItems);
                     setStep('confirm');
                     return; // Skip the text step
                 }
