@@ -33,9 +33,13 @@ export async function GET(request: NextRequest) {
 
                 if (shop) {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const metadata = user.user_metadata || {};
+                    const displayName = metadata.full_name || metadata.name || metadata.u_name || '';
+
                     await (supabase.from('customers') as any).insert({
                         auth_user_id: user.id,
                         email: user.email!,
+                        display_name: displayName,
                         shop_id: (shop as any).id,
                     });
                 }

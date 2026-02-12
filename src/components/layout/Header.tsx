@@ -11,6 +11,7 @@ export default function Header() {
     const router = useRouter();
     const [user, setUser] = useState<User | null>(null);
     const [userEmail, setUserEmail] = useState<string | null>(null);
+    const [isAdmin, setIsAdmin] = useState(false);
 
     useEffect(() => {
         const getUser = async () => {
@@ -18,6 +19,21 @@ export default function Header() {
             const { data: { user } } = await supabase.auth.getUser();
             setUser(user);
             setUserEmail(user?.email || null);
+
+            if (user) {
+                // Check if user is a shop admin
+                const { data: membershipData } = await supabase
+                    .from('shop_members')
+                    .select('role')
+                    .eq('user_id', user.id)
+                    .maybeSingle();
+
+                const member = membershipData as { role: string } | null;
+
+                if (member?.role === 'admin') {
+                    setIsAdmin(true);
+                }
+            }
         };
         getUser();
     }, []);
@@ -47,17 +63,19 @@ export default function Header() {
                 <nav className="hidden md:flex items-center gap-1">
                     {userEmail ? (
                         <>
-                            <Link
-                                href="/dashboard"
-                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${pathname === '/dashboard'
-                                    ? 'bg-white/10 text-white'
-                                    : 'text-[var(--brand-slate)] hover:text-white hover:bg-white/5'
-                                    }`}
-                            >
-                                Dashboard
-                            </Link>
+                            {!isAdmin && (
+                                <Link
+                                    href="/dashboard"
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${pathname === '/dashboard'
+                                        ? 'bg-white/10 text-white'
+                                        : 'text-[var(--brand-slate)] hover:text-white hover:bg-white/5'
+                                        }`}
+                                >
+                                    Dashboard
+                                </Link>
+                            )}
 
-                            {userEmail === 'info@righttimeinc.com' && (
+                            {isAdmin && (
                                 <Link
                                     href="/admin"
                                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${pathname.startsWith('/admin')
