@@ -96,7 +96,7 @@ export default function Home() {
           <div className="glass p-8 sm:p-12 text-center glow-gold">
             <h2 className="text-2xl font-bold text-white mb-4">🔒 Your Data is Secure</h2>
             <p className="text-[var(--brand-slate)] max-w-xl mx-auto leading-relaxed">
-              End-to-end encryption, no password required. Sign in with a secure email link.
+              End-to-end encryption, no password required. You only need your Google Account.
               Your receipt photos are automatically deleted after 13 months for your privacy.
             </p>
           </div>
