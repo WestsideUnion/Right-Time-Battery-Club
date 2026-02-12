@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
     if (code) {
         const supabase = await createClient();
         const { data: { user }, error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error) console.error('Auth Exchange Error:', error);
 
         if (!error && user) {
             // Ensure a customer record exists for this user

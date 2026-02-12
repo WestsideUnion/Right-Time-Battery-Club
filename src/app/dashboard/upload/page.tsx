@@ -25,6 +25,46 @@ export default function UploadPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
+    const getOrCreateCustomer = async (user: any) => {
+        // 1. Try to find existing
+        const { data: existing, error: findError } = await (supabase
+            .from('customers') as any)
+            .select('id, shop_id')
+            .eq('auth_user_id', user.id)
+            .maybeSingle();
+
+        if (existing) return existing;
+
+        // 2. If not found, create new
+        console.log('Customer not found, creating new record...');
+
+        // Get default shop
+        const { data: shop } = await (supabase
+            .from('shops') as any)
+            .select('id')
+            .eq('slug', 'right-time')
+            .single();
+
+        if (!shop) throw new Error('Default shop configuration missing');
+
+        const { data: newCustomer, error: createError } = await (supabase
+            .from('customers') as any)
+            .insert({
+                auth_user_id: user.id,
+                email: user.email,
+                shop_id: shop.id,
+            })
+            .select('id, shop_id')
+            .single();
+
+        if (createError) {
+            console.error('Failed to create customer:', createError);
+            throw new Error('Failed to create customer profile');
+        }
+
+        return newCustomer;
+    };
+
     const handleFile = (f: File) => {
         setFile(f);
         setPreview(URL.createObjectURL(f));
@@ -40,16 +80,8 @@ export default function UploadPage() {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('Not authenticated');
 
-            const { data: customerData } = await supabase
-                .from('customers')
-                .select('id, shop_id')
-                .eq('auth_user_id', user.id)
-                .single();
-
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const customer = customerData as any;
-
-            if (!customer) throw new Error('Customer record not found');
+            // Get customer (create if missing)
+            const customer = await getOrCreateCustomer(user);
 
             // Upload to storage
             const ext = file.name.split('.').pop();
@@ -94,16 +126,8 @@ export default function UploadPage() {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('Not authenticated');
 
-            const { data: customerData } = await supabase
-                .from('customers')
-                .select('id, shop_id')
-                .eq('auth_user_id', user.id)
-                .single();
-
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const customer = customerData as any;
-
-            if (!customer) throw new Error('Customer record not found');
+            // Get customer (create if missing)
+            const customer = await getOrCreateCustomer(user);
 
             const serviceDateTime = new Date(confirmedDate);
             const expiresAt = new Date(serviceDateTime);
