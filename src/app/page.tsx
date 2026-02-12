@@ -104,8 +104,16 @@ export default function Home() {
 
         {/* Footer */}
         <footer className="border-t border-white/5 py-8">
-          <div className="max-w-5xl mx-auto px-4 text-center text-sm text-[var(--brand-slate)]">
-            © {new Date().getFullYear()} Right Time Inc. All rights reserved.
+          <div className="max-w-5xl mx-auto px-4 text-center text-sm text-[var(--brand-slate)] space-y-4">
+            <p>© {new Date().getFullYear()} Right Time Inc. All rights reserved.</p>
+            <div className="flex justify-center gap-6 opacity-60 hover:opacity-100 transition-opacity">
+              <Link href="/privacy" className="hover:text-[var(--brand-gold)] transition-colors">
+                Privacy Policy
+              </Link>
+              <Link href="/terms" className="hover:text-[var(--brand-gold)] transition-colors">
+                Terms of Service
+              </Link>
+            </div>
           </div>
         </footer>
       </main>
