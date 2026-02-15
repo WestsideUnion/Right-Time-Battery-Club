@@ -13,10 +13,11 @@ interface ReceiptWithCustomer extends ReceiptWithItems {
 export default async function AdminPage({
     searchParams,
 }: {
-    searchParams: { q?: string };
+    searchParams: Promise<{ q?: string }>;
 }) {
     const supabase = await createClient();
-    const query = searchParams?.q || '';
+    const resolvedSearchParams = await searchParams;
+    const query = resolvedSearchParams?.q || '';
 
     const { data: { user } } = await supabase.auth.getUser();
 
