@@ -1,7 +1,7 @@
-# SPEC.md — Right Time Battery Clock (MVP v1)
+# SPEC.md — Right Time Battery Club (MVP v1)
 
 ## Summary
-Right Time Battery Clock is a secure digital receipt vault and warranty tracker for watch battery services.
+Right Time Battery Club is a secure digital receipt vault and warranty tracker for watch battery services.
 Customers upload receipt photos, confirm extracted structured data, and access warranty status via email OTP login.
 Receipt photos are automatically deleted after 13 months for privacy.
 

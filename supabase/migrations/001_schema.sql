@@ -1,5 +1,5 @@
 -- ============================================================
--- Right Time Battery Clock — Database Schema (MVP v1)
+-- Right Time Battery Club — Database Schema (MVP v1)
 -- ============================================================
 
 -- Enable UUID generation
@@ -16,7 +16,7 @@ CREATE TABLE shops (
 );
 
 -- Seed the default shop
-INSERT INTO shops (name, slug) VALUES ('Right Time Battery Clock', 'right-time');
+INSERT INTO shops (name, slug) VALUES ('Right Time Battery Club', 'right-time');
 
 -- -----------------------------------------------------------
 -- customers
