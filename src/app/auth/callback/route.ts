@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
                 if (shop) {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const metadata = user.user_metadata || {};
-                    const displayName = metadata.full_name || metadata.name || metadata.u_name || '';
+                    const displayName = metadata.full_name || metadata.name || metadata.u_name || metadata.displayName || '';
 
                     await (supabase.from('customers') as any).insert({
                         auth_user_id: user.id,
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
                 const customer = existingCustomer as any;
                 if (!customer.display_name) {
                     const metadata = user.user_metadata || {};
-                    const displayName = metadata.full_name || metadata.name || metadata.u_name || '';
+                    const displayName = metadata.full_name || metadata.name || metadata.u_name || metadata.displayName || '';
 
                     if (displayName) {
                         await (supabase
