@@ -18,6 +18,16 @@ export default async function DashboardPage() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const customer = customerData as any;
 
+    // Belt-and-suspenders: if display_name wasn't synced to the customers table yet
+    // (e.g. brand-new Google OAuth user before the DB trigger fires), fall back to
+    // reading the name directly from the auth user metadata, which Google always provides.
+    const displayName: string =
+        customer?.display_name ||
+        user?.user_metadata?.full_name ||
+        user?.user_metadata?.name ||
+        user?.user_metadata?.displayName ||
+        '';
+
     const { data: receiptsData } = await supabase
         .from('receipts')
         .select('*, receipt_items(*)')
@@ -38,7 +48,7 @@ export default async function DashboardPage() {
             <div className="flex items-center justify-between mb-8">
                 <div>
                     <h1 className="text-2xl font-bold text-white">
-                        Welcome{customer?.display_name ? `, ${customer.display_name}` : ''}
+                        Welcome{displayName ? `, ${displayName}` : ''}
                     </h1>
                     <p className="text-sm text-[var(--brand-slate)] mt-1">{customer?.email}</p>
                 </div>

@@ -44,19 +44,20 @@ export async function GET(request: NextRequest) {
                     });
                 }
             } else {
-                // Check if we should update the name (e.g. if it's missing)
+                // Always try to repair the name from the latest Google metadata.
+                // This heals any race-condition where the first login captured
+                // an empty metadata window and stored a blank display_name.
+                const metadata = user.user_metadata || {};
+                const freshName = metadata.full_name || metadata.name || metadata.u_name || metadata.displayName || '';
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const customer = existingCustomer as any;
-                if (!customer.display_name) {
-                    const metadata = user.user_metadata || {};
-                    const displayName = metadata.full_name || metadata.name || metadata.u_name || metadata.displayName || '';
+                const existingName = (existingCustomer as any).display_name || '';
 
-                    if (displayName) {
-                        await (supabase
-                            .from('customers') as any)
-                            .update({ display_name: displayName })
-                            .eq('id', customer.id);
-                    }
+                if (freshName && freshName !== existingName) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    await (supabase.from('customers') as any)
+                        .update({ display_name: freshName })
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        .eq('id', (existingCustomer as any).id);
                 }
             }
 
